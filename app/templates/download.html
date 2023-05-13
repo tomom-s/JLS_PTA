@@ -1,0 +1,32 @@
+{% extends "layout.html" %}
+
+{% block title %}
+    ファイルのダウンロード
+{% endblock %}
+
+{% block main %}
+
+  <body>
+        <div class="container">
+        <div class="row">
+            <h1>ファイルのダウンロード</h1>
+            <a class="btn btn-success" href="{{url_for('download_file')}}">ダウンロード</a>
+        </div>
+    </div>
+
+
+	<h3>
+		処理ファイル
+	</h3>
+	{% if fileslist %}
+		{% for file in fileslist %}
+		<div>
+			<ul class="list-group list-group-flush">
+				<li class="list-group-item" name="{{ file.filename }}">{{ file }}</li>
+			</ul>
+		</div>
+		{% endfor %}
+	{% endif %}
+
+
+{% endblock %}

@@ -1,0 +1,29 @@
+{% extends "layout.html" %}
+
+{% block title %}
+    タスク
+{% endblock %}
+
+{% block main %}
+<H1>
+    実行するタスク: {{ id }} - {{ desc }}
+</H1>
+
+<p>
+    変換元のファイルを選択してください
+</p>
+
+<form method="post" action="/task" enctype="multipart/form-data" >
+    <dl>
+		<p>
+			タスク: <input type="text" name="id" value="{{ id }}"> </br></br>
+			<input type="file" name="file[]" multiple="true" autocomplete="off" required>
+		</p>
+    </dl>
+    <p>
+		<input type="submit" value="実行" name="{{ id }}" class="btn btn-primary mb-2">
+	</p>
+</form>
+
+
+{% endblock %}

@@ -1,0 +1,30 @@
+{% extends "layout.html" %}
+
+{% block title %}
+    ホーム
+{% endblock %}
+
+{% block main %}
+<h1>ファイル変換ツール</h1>
+
+<p>
+    実行するタスクをリストから選択してください.
+</p>
+
+    <form action="/" method="post">
+        <div class="mb-3">
+            <select class="form-select" aria-label="Select example" name="tasks">
+                <option disabled selected>タスクを選択してください</option>
+                {% for id, task in tasks.items() %}
+                    <option name="task" value="{{ id }}"> {{ tasks[id] }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div>
+            <button class="btn btn-primary" type="submit">実行</button>
+        </div>
+    </form>
+
+{% endblock %}
+
+
