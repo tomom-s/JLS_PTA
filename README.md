@@ -23,7 +23,7 @@ Export CSV from 台帳 and select it to generate each class's data to share with
 1. Run
 
     ```shell
-    docker run --rm -p 8080:5000 pta-app
+    docker run --rm -it -p 8080:5000 pta-app
     ```
     if you want to enable debug mode, run the following command instead:
     ```shell
