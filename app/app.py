@@ -14,7 +14,7 @@ import pandas as pd
 #pip install -r requirements.txt
 # Configure application
 app = Flask(__name__)
-app.debug = True
+app.debug = os.environ.get('FLASK_DEBUG', False)
 
 # Ensure templates are auto-reloaded
 app.config["TEMPLATES_AUTO_RELOAD"] = True
@@ -36,7 +36,7 @@ APP_ROOT = os.path.dirname(os.path.abspath(__file__))
 ALLOWED_EXTENSIONS = set(['csv'])
 
 TASKS = {1:"台帳作成",2:"台帳から名簿の作成"}
-    
+
 
 def allowed_file(filename):
 	return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
@@ -135,12 +135,12 @@ def master_creation(file_set):
     for f in file_set:
         out = f.replace(UPLOAD_FOLDER, DOWNLOAD_FOLDER)
         out = out.replace('.csv', '.xlsx')
-    
+
     if len(file_set) > 1:
         message = "ファイルは複数選択しないでください。やり直してください。"
         return render_template('apology.html', message=message)
 
- #       print('Multiple csv files in folder. Please keep one only')
+#       print('Multiple csv files in folder. Please keep one only')
 
     else:
         excel_name = file_set[0].replace('.csv', '.xlsx')
@@ -149,7 +149,6 @@ def master_creation(file_set):
         print(df.columns.to_list())
         df.drop(df.index[df['連番'] == '連番'], inplace=True)
         df = df.dropna(subset=['連番'])
-        
 
 #        print(df)
         df = df.replace('幼稚部2年', '幼稚部年長', regex=True)
@@ -164,13 +163,13 @@ def master_creation(file_set):
 
         df.to_excel(excel_name, columns=['生徒番号','学年組','生徒漢字名', '生徒ローマ字名', '性別', '兄弟姉妹のクラス',
                                                         '兄弟姉妹名', '保護者１漢字名', '保護者１電話','保護者１email',
-                                                        '保護者２漢字名'], index=False)    
+                                                        '保護者２漢字名'], index=False)
         xlsx_list.append(excel_name)
         return xlsx_list
 
 def split_class(file_set):
     xlsx_list = []
-    
+
     if len(file_set) > 1:
         message = "ファイルは複数選択しないでください。やり直してください。"
         return render_template('apology.html', message=message)
@@ -183,10 +182,13 @@ def split_class(file_set):
         print(df)
         out = file_set[0].replace(UPLOAD_FOLDER, DOWNLOAD_FOLDER)
         out = os.path.dirname(out)
-        
+
         print(out)
         for p in df['学年組'].unique():
             df.loc[df['学年組'] == p].to_excel(f'{out}/{p}.xlsx',columns=['生徒漢字名','生徒ローマ字名','性別','兄弟姉妹のクラス','兄弟姉妹名','保護者','保護者電話','保護者email','免除/減免'], index=False)
             print(f'{file_set}/{p}.xlsx')
             xlsx_list.append(f'{out}/{p}.xlsx')
-        return xlsx_list 
+        return xlsx_list
+
+if __name__ == '__main__':
+    app.run(host='0.0.0.0')
