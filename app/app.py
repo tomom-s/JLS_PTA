@@ -147,8 +147,10 @@ def master_creation(file_set):
         excel_name = excel_name.replace(UPLOAD_FOLDER, DOWNLOAD_FOLDER)
         df = pd.read_csv(file_set[0], skiprows=1)
         print(df.columns.to_list())
-        df.drop(df.index[df['連番'] == '連番'], inplace=True)
-        df = df.dropna(subset=['連番'])
+        #df.drop(df.index[df['連番'] == '連番'], inplace=True)
+        #df = df.dropna(subset=['連番'])
+        df.drop(df.index[df['役員'] == '役員'], inplace=True)
+        df = df.dropna(subset=['役員'])
 
 #        print(df)
         df = df.replace('幼稚部2年', '幼稚部年長', regex=True)
@@ -160,10 +162,11 @@ def master_creation(file_set):
         df = df.replace('Japanese Division5年Japanese5組', '日本語部5', regex=True)
         df = df.replace('高等部1年1組', '高等部1年', regex=True)
         df = df.replace('高等部2年1組', '高等部2年', regex=True)
+        df = df.replace('配付', '長子', regex=True)
 
-        df.to_excel(excel_name, columns=['生徒番号','学年組','生徒漢字名', '生徒ローマ字名', '性別', '兄弟姉妹のクラス',
+        df.to_excel(excel_name, columns=['生徒番号','配付','学年組','生徒漢字名', '生徒ローマ字名', '性別', '兄弟姉妹のクラス',
                                                         '兄弟姉妹名', '保護者１漢字名', '保護者１電話','保護者１email',
-                                                        '保護者２漢字名'], index=False)
+                                                        '保護者２漢字名', '保護者２email'], index=False)
         xlsx_list.append(excel_name)
         return xlsx_list
 
