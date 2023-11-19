@@ -8,6 +8,8 @@ Selecting the csv exported from WES will generate the data that needs to be shar
 ### 台帳から名簿の作成
 Export CSV from 台帳 and select it to generate each class's data to share with the classes.
 
+### 免除追加
+Select the list of people who should be excluded from the helper in csv and export from Excel generated from 1st menu of this app. You will get the Excel with that info added to the 1st column and csv with people not found in master file.
 
 ## How to run locally
 
