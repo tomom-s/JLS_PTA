@@ -13,6 +13,9 @@ import pandas as pd
 #pip freeze > requirements.txt
 #pip install -r requirements.txt
 # Configure application
+
+#run pip freeze > requirements.txt
+
 app = Flask(__name__)
 app.debug = os.environ.get('FLASK_DEBUG', False)
 
