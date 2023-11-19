@@ -4,9 +4,9 @@ from io import BytesIO
 from glob import glob
 #import io
 from zipfile import ZipFile
-#import openpyxl
+import openpyxl
 from openpyxl.styles import PatternFill, Font
-#import csv
+import csv
 #import sys
 import pandas as pd
 #import datetime
@@ -33,9 +33,9 @@ app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024
 
 APP_ROOT = os.path.dirname(os.path.abspath(__file__))
 
-ALLOWED_EXTENSIONS = set(['csv'])
+ALLOWED_EXTENSIONS = set(['csv', 'xlsx'])
 
-TASKS = {1:"台帳作成",2:"台帳から名簿の作成"}
+TASKS = {1:"台帳作成 - csvファイルを選択してください",2:"台帳から名簿の作成 ‐ csvファイルを選択してください",3:"免除追加 - csvファイルとxlsxファイルを選択してください"}
 
 
 def allowed_file(filename):
@@ -76,7 +76,7 @@ def upload():
             if allowed_file(file.filename):
                 file.save(os.path.join(app.config['UPLOAD_FOLDER'], file.filename))
             else:
-                message = 'Allowed files are CSV only. Please try again.'
+                message = 'Allowed files are CSV and EXSX only. Please try again.'
                 for f in os.listdir(UPLOAD_FOLDER):
                     path = os.path.join(UPLOAD_FOLDER, f)
                     if os.path.isfile(path):
@@ -90,6 +90,7 @@ def upload():
             path = os.path.join(UPLOAD_FOLDER, f)
             if os.path.isfile(path):
                 file_set.append(path)
+        print(file_set)
         try:
             if id == 1:
                 flist = master_creation(file_set)
@@ -97,6 +98,8 @@ def upload():
             elif id == 2:
                 flist = split_class(file_set)
 
+            elif id ==3:
+                flist = process(file_set)
 
             else:
                 message = "Something went wrong. Please go back and try again."
@@ -146,6 +149,7 @@ def master_creation(file_set):
         excel_name = file_set[0].replace('.csv', '.xlsx')
         excel_name = excel_name.replace(UPLOAD_FOLDER, DOWNLOAD_FOLDER)
         df = pd.read_csv(file_set[0], skiprows=1)
+        df = df.rename(columns={'配付':'長子'})
         print(df.columns.to_list())
         #df.drop(df.index[df['連番'] == '連番'], inplace=True)
         #df = df.dropna(subset=['連番'])
@@ -164,7 +168,7 @@ def master_creation(file_set):
         df = df.replace('高等部2年1組', '高等部2年', regex=True)
         df = df.replace('配付', '長子', regex=True)
 
-        df.to_excel(excel_name, columns=['生徒番号','配付','学年組','生徒漢字名', '生徒ローマ字名', '性別', '兄弟姉妹のクラス',
+        df.to_excel(excel_name, columns=['生徒番号','長子','学年組','生徒漢字名', '生徒ローマ字名', '性別', '兄弟姉妹のクラス',
                                                         '兄弟姉妹名', '保護者１漢字名', '保護者１電話','保護者１email',
                                                         '保護者２漢字名', '保護者２email'], index=False)
         xlsx_list.append(excel_name)
@@ -176,6 +180,7 @@ def split_class(file_set):
     if len(file_set) > 1:
         message = "ファイルは複数選択しないでください。やり直してください。"
         return render_template('apology.html', message=message)
+        
 
     else:
         df = pd.read_csv(file_set[0])
@@ -192,6 +197,96 @@ def split_class(file_set):
             print(f'{file_set}/{p}.xlsx')
             xlsx_list.append(f'{out}/{p}.xlsx')
         return xlsx_list
+    
+
+
+def process(file_set):
+
+    xlsx_list = []
+
+    if len(file_set) > 2:
+        message = "正しいファイルを選択してください。"
+        return render_template('apology.html', message=message)
+
+    for f in file_set:
+        if f.endswith('.csv'):
+            csv_out = f.replace(UPLOAD_FOLDER, DOWNLOAD_FOLDER)
+            csv_out = csv_out.replace('.csv', '_notfound.csv')
+            pta = f
+        elif f.endswith('.xlsx'):
+            xlsx_out = f.replace(UPLOAD_FOLDER, DOWNLOAD_FOLDER)
+            xlsx_out = xlsx_out.replace('.xlsx', '_updated.xlsx')
+            master = f
+        else:
+            message = "ファイルの種類を確認してください。やり直してください。"
+            return render_template('apology.html', message=message)
+
+
+    pta_members_dic = dic_generate(pta)
+#       print(pta_members_dic)
+    master_df = pd.read_excel(master)
+    master_df.insert(0, '免除', '')
+
+
+    non_exist, updated_df = check_menjyo(master_df, pta_members_dic)
+#    non_exist= update_pta(master[0], pta_members_dic)
+
+    with open(csv_out, 'w', encoding='utf-8-sig') as csvfile:
+        for k, v in non_exist.items():
+            csvfile.write(str(k) + ',' + str(v) + '\n')
+
+    updated_df.to_excel(xlsx_out, index=False, engine='openpyxl')
+
+    xlsx_list.append(csv_out)
+    xlsx_list.append(xlsx_out)
+    
+    return xlsx_list
+
+
+def check_menjyo(data_df, dic):
+    non_exist = {}
+
+    data_df['保護者１漢字名'].replace('　', '', regex=True, inplace=True)
+    data_df['保護者２漢字名'].replace('　', '', regex=True, inplace=True)
+    data_df['保護者１漢字名'].replace(' ', '', regex=True, inplace=True)
+    data_df['保護者２漢字名'].replace(' ', '', regex=True, inplace=True)
+#    print(data_df[['保護者１漢字名']].to_string(index=True))
+#    print(data_df[['保護者２漢字名']].to_string(index=True))
+    print(data_df)
+    for k, v in dic.items():
+        if k in data_df.values:
+            print(f"'{k}' exist in column")
+            data_df.loc[data_df['保護者１漢字名'] == k, '免除'] = v
+            data_df.loc[data_df['保護者２漢字名'] == k, '免除'] = v
+
+        else:
+            print(f"'{k}' is not in master")
+            non_exist[k] = v
+
+
+
+    return non_exist, data_df
+
+
+
+def dic_generate(file):
+    pta_dic = {}
+    with open(file, encoding='utf-8-sig') as c:
+        content = csv.reader(c)
+
+        for row in content:
+            #column B is role, column C is name. Change accordingly
+            k = row[2]
+            v = row[1]
+            k = k.replace('　', '')
+            k = k.replace(' ', '')
+            v = v.replace('　', '')
+            v = v.replace(' ', '')
+            print(f'k: {k}, v: {v}')
+            pta_dic[k] = v
+    return pta_dic
+
+
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0')
